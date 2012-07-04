@@ -196,20 +196,20 @@ NSString *MPCalculateContent(MPElementType type, NSString *name, NSData *key, ui
                              nil]
                              hmacWith:PearlHashSHA256 key:key];
     trc(@"seed is: %@", [seed encodeBase64]);
-    const char *seedBytes = seed.bytes;
+    const unsigned char *seedBytes = seed.bytes;
 
     // Determine the cipher from the first seed byte.
     assert([seed length]);
     NSArray  *typeCiphers = [[MPTypes_ciphers valueForKey:ClassNameFromMPElementType(type)]
                                               valueForKey:NSStringFromMPElementType(type)];
-    NSString *cipher      = [typeCiphers objectAtIndex:htons(seedBytes[0]) % [typeCiphers count]];
+    NSString *cipher      = [typeCiphers objectAtIndex:seedBytes[0] % [typeCiphers count]];
     trc(@"type %d, ciphers: %@, selected: %@", type, typeCiphers, cipher);
 
     // Encode the content, character by character, using subsequent seed bytes and the cipher.
     assert([seed length] >= [cipher length] + 1);
     NSMutableString *content = [NSMutableString stringWithCapacity:[cipher length]];
     for (NSUInteger c = 0; c < [cipher length]; ++c) {
-        uint16_t keyByte = htons(seedBytes[c + 1]);
+        uint16_t keyByte = seedBytes[c + 1];
         NSString *cipherClass           = [cipher substringWithRange:NSMakeRange(c, 1)];
         NSString *cipherClassCharacters = [[MPTypes_ciphers valueForKey:@"MPCharacterClasses"] valueForKey:cipherClass];
         NSString *character             = [cipherClassCharacters substringWithRange:NSMakeRange(keyByte % [cipherClassCharacters length],
